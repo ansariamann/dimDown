@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DimDown</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #09090f;
+      --surface:  #111118;
+      --border:   rgba(255,255,255,0.06);
+      --accent:   #7c6cf8;
+      --accent-2: #a78bfa;
+      --glow:     rgba(124,108,248,0.3);
+      --warm:     #f59e0b;
+      --warm-glow:rgba(245,158,11,0.3);
+      --on:       #6ee7b7;
+      --text:     #e2e2f0;
+      --muted:    #52526e;
+    }
+
+    html, body {
+      width: 280px;
+      background: var(--bg);
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── Layout ─────────────────────────── */
+    .popup {
+      padding: 20px 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* ── Header ─────────────────────────── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .wordmark {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -0.2px;
+      color: var(--text);
+      opacity: 0.85;
+    }
+    .wordmark span {
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      transition: color 0.3s;
+    }
+    .status-pill.on { color: var(--on); }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+    .status-pill.on .status-dot {
+      background: var(--on);
+      box-shadow: 0 0 6px var(--on);
+      animation: blink 2.5s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%,100% { opacity:1; } 60% { opacity:0.4; }
+    }
+
+    /* ── Big dial section ───────────────── */
+    .dial-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .dial-number {
+      font-size: 56px;
+      font-weight: 300;
+      letter-spacing: -3px;
+      line-height: 1;
+      background: linear-gradient(160deg, #ffffff 30%, var(--accent-2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      transition: opacity 0.3s;
+    }
+    .dial-number.dim { opacity: 0.3; }
+    .dial-unit {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 400;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: -4px;
+    }
+
+    /* ── Slider ─────────────────────────── */
+    .slider-section { display: flex; flex-direction: column; gap: 10px; }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .slider-icon { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+      background: var(--surface);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 0 3px var(--glow), 0 2px 8px rgba(0,0,0,0.5);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    input[type="range"]::-webkit-slider-thumb:active {
+      transform: scale(1.2);
+    }
+    input[type="range"].warm-slider::-webkit-slider-thumb {
+      box-shadow: 0 0 0 3px var(--warm-glow), 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    /* ── Divider ────────────────────────── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Controls row ───────────────────── */
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Power button */
+    .power-wrap { position: relative; }
+    #masterToggle { display: none; }
+    .power-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
+    }
+    .power-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: var(--muted);
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      transition: stroke 0.25s;
+    }
+    #masterToggle:checked ~ .power-btn {
+      background: rgba(124,108,248,0.15);
+      border-color: var(--accent);
+      box-shadow: 0 0 18px var(--glow);
+    }
+    #masterToggle:checked ~ .power-btn svg {
+      stroke: var(--accent-2);
+    }
+
+    /* Preset pills */
+    .presets {
+      display: flex;
+      gap: 6px;
+    }
+    .preset {
+      padding: 5px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.18s ease;
+      letter-spacing: 0.2px;
+    }
+    .preset:hover {
+      border-color: rgba(124,108,248,0.4);
+      color: var(--accent-2);
+    }
+    .preset.active {
+      background: rgba(124,108,248,0.12);
+      border-color: var(--accent);
+      color: var(--accent-2);
+    }
+
+    /* Warm toggle row */
+    .warm-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .warm-label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .warm-label-icon { font-size: 13px; }
+
+    /* Pill toggle */
+    .pill-toggle { position: relative; cursor: pointer; }
+    .pill-toggle input { display: none; }
+    .pill-track {
+      width: 32px;
+      height: 17px;
+      border-radius: 9px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      position: relative;
+      transition: background 0.25s, border-color 0.25s;
+    }
+    .pill-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: left 0.25s, background 0.25s;
+    }
+    .pill-toggle input:checked ~ .pill-track {
+      background: rgba(245,158,11,0.15);
+      border-color: var(--warm);
+    }
+    .pill-toggle input:checked ~ .pill-track .pill-thumb {
+      left: 17px;
+      background: var(--warm);
+    }
+
+    .warm-slider-wrap {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.3s ease;
+      opacity: 0;
+    }
+    .warm-slider-wrap.open {
+      max-height: 40px;
+      opacity: 1;
+    }
+
+    /* Disabled overlay on controls when power is off */
+    .main-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: opacity 0.3s;
+    }
+    .main-controls.off { opacity: 0.3; pointer-events: none; }
+
+    /* Footer */
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 2px;
+    }
+    .footer-hint {
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+    .reset-btn {
+      background: none;
+      border: none;
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 3px 6px;
+      border-radius: 4px;
+      transition: color 0.2s, background 0.2s;
+    }
+    .reset-btn:hover {
+      color: #f87171;
+      background: rgba(248,113,113,0.08);
+    }
+  </style>
+</head>
+<body>
+<div class="popup">
+
+  <!-- Header -->
+  <div class="header">
+    <span class="wordmark">Dim<span>Down</span></span>
+    <div class="status-pill" id="statusPill">
+      <div class="status-dot"></div>
+      <span id="statusLabel">Off</span>
+    </div>
+  </div>
+
+  <!-- Big number -->
+  <div class="dial-wrap">
+    <div class="dial-number dim" id="dialNumber">50</div>
+    <div class="dial-unit">Darkness</div>
+  </div>
+
+  <!-- Sliders + controls -->
+  <div class="main-controls off" id="mainControls">
+
+    <!-- Brightness slider -->
+    <div class="slider-section">
+      <div class="slider-row">
+        <span class="slider-icon">○</span>
+        <input type="range" id="brightnessSlider" min="0" max="95" value="50" step="1" />
+        <span class="slider-icon">●</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Warm tone -->
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="warm-row">
+        <div class="warm-label">
+          <span class="warm-label-icon">🌡</span>
+          Warm Tint
+        </div>
+        <label class="pill-toggle">
+          <input type="checkbox" id="warmToggle" />
+          <div class="pill-track"><div class="pill-thumb"></div></div>
+        </label>
+      </div>
+      <div class="warm-slider-wrap" id="warmSliderWrap">
+        <div class="slider-row">
+          <span class="slider-icon">❄</span>
+          <input type="range" class="warm-slider" id="warmSlider" min="0" max="80" value="30" step="1" />
+          <span class="slider-icon">🔥</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Bottom: power + presets -->
+  <div class="controls">
+    <label class="power-wrap">
+      <input type="checkbox" id="masterToggle" />
+      <div class="power-btn">
+        <!-- Power SVG icon -->
+        <svg viewBox="0 0 24 24">
+          <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+          <line x1="12" y1="2" x2="12" y2="12"/>
+        </svg>
+      </div>
+    </label>
+    <div class="presets">
+      <button class="preset" data-value="15" id="p-15">Night</button>
+      <button class="preset" data-value="40" id="p-40">Dim</button>
+      <button class="preset" data-value="70" id="p-70">Cozy</button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span class="footer-hint" id="footerHint">All tabs</span>
+    <button class="reset-btn" id="resetBtn">Reset</button>
+  </div>
+
+</div>
+<script src="popup.js"></script>
+</body>
+</html>

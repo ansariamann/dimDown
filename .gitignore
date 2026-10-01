@@ -1,0 +1,30 @@
+# Antigravity / IDE
+.antigravity/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node (if ever added)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output (if ever added)
+dist/
+build/
+*.zip
+*.crx
+
+# Env / secrets
+.env
+.env.local
+.env.*
